@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { LogIn, User } from "lucide-react";
+import { MessageSquare } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import Signup from "../components/Signup";
+import SignIn from "../components/SignIn.Jsx";
 
 const WelcomeScreen = ({ onJoin }) => {
-  const [name, setName] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (name.trim()) {
-      onJoin(name.trim());
+  const handleAuth = (userData) => {
+    // For now, we just use the name (from signup) or email prefix (from signin) to join
+    const displayName = userData.name || userData.email.split("@")[0];
+    if (displayName) {
+      onJoin(displayName);
     }
   };
 
@@ -23,84 +27,40 @@ const WelcomeScreen = ({ onJoin }) => {
     >
       <div
         className="glass glass-card"
-        style={{ maxWidth: "400px", width: "100%", textAlign: "center" }}
+        style={{ maxWidth: "450px", width: "100%", textAlign: "center", overflow: "hidden", }}
       >
         <div
           style={{
             width: "80px",
             height: "80px",
-            background: "rgba(255, 255, 255, 0.05)",
+            background: "rgba(139, 92, 246, 0.1)",
             borderRadius: "20px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 24px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            border: "1px solid rgba(139, 92, 246, 0.2)",
+            boxShadow: "0 0 20px rgba(139, 92, 246, 0.2)",
           }}
         >
-          <User size={40} color="#8b5cf6" />
+          <MessageSquare size={40} color="#8b5cf6" />
         </div>
 
-        <h1
-          style={{
-            fontSize: "2rem",
-            fontWeight: "700",
-            marginBottom: "8px",
-            background: "linear-gradient(to right, #fff, #94a3b8)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Welcome back
-        </h1>
-        <p style={{ color: "#94a3b8", marginBottom: "32px" }}>
-          Please enter your good name to join the chat
-        </p>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ position: "relative", marginBottom: "20px" }}>
-            <input
-              type="text"
-              placeholder="Your Good Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{
-                width: "100%",
-                paddingLeft: "48px",
-                height: "56px",
-                fontSize: "1rem",
-              }}
-              required
-              autoFocus
+        <AnimatePresence mode="wait">
+          {isLogin ? (
+            <SignIn
+              key="signin"
+              onToggle={() => setIsLogin(false)}
+              onSignIn={handleAuth}
             />
-            <User
-              size={20}
-              color="#64748b"
-              style={{
-                position: "absolute",
-                left: "16px",
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
+          ) : (
+            <Signup
+              key="signup"
+              onToggle={() => setIsLogin(true)}
+              onSignUp={handleAuth}
             />
-          </div>
-
-          <button
-            type="submit"
-            className="btn-primary"
-            style={{
-              width: "100%",
-              height: "56px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              fontSize: "1.1rem",
-            }}
-          >
-            Join Chat <LogIn size={20} />
-          </button>
-        </form>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
