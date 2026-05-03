@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
+import { registerApi } from "../api/auth/auth.api";
 
 const Signup = ({ onToggle, onSignUp }) => {
   const [formData, setFormData] = useState({
@@ -9,9 +10,23 @@ const Signup = ({ onToggle, onSignUp }) => {
     password: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSignUp(formData);
+    try {
+      const res = await registerApi(formData);
+
+      const { token, user } = res?.data || {};
+      // set token
+      localStorage.setItem("token", token);
+
+      // set user
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // update parent
+      onSignUp(user);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (

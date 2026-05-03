@@ -9,9 +9,8 @@ const WelcomeScreen = ({ onJoin }) => {
 
   const handleAuth = (userData) => {
     // For now, we just use the name (from signup) or email prefix (from signin) to join
-    const displayName = userData.name || userData.email.split("@")[0];
-    if (displayName) {
-      onJoin(displayName);
+    if (userData) {
+      onJoin(userData);
     }
   };
 

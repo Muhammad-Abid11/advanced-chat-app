@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   Send,
   MoreVertical,
@@ -43,9 +44,23 @@ const DUMMY_MESSAGES = [
   },
 ];
 
-const ChatScreen = ({ user }) => {
+const ChatScreen = ({ user, onLogout }) => {
+  const { chatId } = useParams();
+  
+  // Format chatId back to readable name
+  const getChatName = (id) => {
+    if (!id) return "General";
+    return id.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  };
+
+  const activeChat = {
+    name: getChatName(chatId),
+    isChannel: ["general", "designers", "development", "random"].includes(chatId?.toLowerCase()),
+  };
+
   const [messages, setMessages] = useState(DUMMY_MESSAGES);
   const [input, setInput] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -77,13 +92,29 @@ const ChatScreen = ({ user }) => {
 
   return (
     <div
+      className="chat-screen-container"
       style={{ display: "flex", height: "100vh", padding: "20px", gap: "20px" }}
     >
-      {/* Sidebar */}
-      <Sidebar user={user} />
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-overlay mobile-only"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar Container */}
+      <div className={`sidebar-container ${isSidebarOpen ? "open" : ""}`}>
+        <Sidebar
+          user={user}
+          onLogout={onLogout}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+      </div>
 
       {/* Main Chat Area */}
       <div
+        className="main-chat-area"
         style={{
           flex: 1,
           display: "flex",
@@ -92,7 +123,12 @@ const ChatScreen = ({ user }) => {
         }}
       >
         {/* Header */}
-        <Header />
+        <Header
+          user={user}
+          activeChat={activeChat}
+          onLogout={onLogout}
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
 
         {/* Messages */}
         <div

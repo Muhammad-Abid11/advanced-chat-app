@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
+import { loginApi } from "../api/auth/auth.api";
 
 const SignIn = ({ onToggle, onSignIn }) => {
   const [formData, setFormData] = useState({
@@ -8,9 +9,25 @@ const SignIn = ({ onToggle, onSignIn }) => {
     password: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSignIn(formData);
+    try {
+      const res = await loginApi(formData);
+
+      const { token, user } = res.data;
+
+      // store token
+      localStorage.setItem("token", token);
+
+      // store user info
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // update parent state
+      onSignIn(user);
+
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
