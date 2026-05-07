@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { User, Mail, Lock, UserPlus } from "lucide-react";
+import { User, Mail, Lock, UserPlus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { registerApi } from "../api/auth/auth.api";
+import useAuthStore from "../store/useAuthStore";
+import { connectWebSocket } from "../config/socket";
+import ErrorMessage from "./common/ErrorMessage";
 
-const Signup = ({ onToggle, onSignUp }) => {
+const Signup = ({ onToggle }) => {
+  const { setUser, setRegisterLoading, isRegisterLoading, error, setError } = useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -12,20 +16,21 @@ const Signup = ({ onToggle, onSignUp }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setRegisterLoading(true);
     try {
       const res = await registerApi(formData);
-
       const { token, user } = res?.data || {};
-      // set token
-      localStorage.setItem("token", token);
 
-      // set user
-      localStorage.setItem("user", JSON.stringify(user));
-
-      // update parent
-      onSignUp(user);
+      // update global state
+      setUser(user);
+      setError(null);
+      connectWebSocket(token);
     } catch (error) {
       console.log(error);
+      const message = error.response?.data?.message || "Registration failed. Try again.";
+      setError(message);
+    } finally {
+      setRegisterLoading(false);
     }
   };
 
@@ -43,6 +48,8 @@ const Signup = ({ onToggle, onSignUp }) => {
       <p style={{ color: "#94a3b8", marginBottom: "32px" }}>
         Join our community and start chatting
       </p>
+
+      <ErrorMessage message={error} />
 
       <form onSubmit={handleSubmit}>
         <div style={{ position: "relative", marginBottom: "20px" }}>
@@ -98,7 +105,7 @@ const Signup = ({ onToggle, onSignUp }) => {
           className="btn-primary"
           style={{ width: "100%", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", fontSize: "1.1rem" }}
         >
-          Sign Up <UserPlus size={20} />
+          Sign Up {isRegisterLoading ? <Loader2 className="spin" size={20} /> : <UserPlus size={20} />}
         </button>
       </form>
 

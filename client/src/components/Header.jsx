@@ -1,6 +1,11 @@
-import { MoreVertical, Hash, Users, Search, Menu, LogOut } from "lucide-react";
+import { MoreVertical, Hash, Users, Search, Menu, LogOut, Loader2 } from "lucide-react";
+import useAuthStore from "../store/useAuthStore";
+import { useLogout } from "../utils/auth.utils";
 
-export default function Header({ user, activeChat, onLogout, onMenuClick }) {
+export default function Header({ activeChat, onMenuClick }) {
+  const { user, isLogoutLoading } = useAuthStore();
+  const handleLogout = useLogout();
+
   return (
     <div
       className="glass"
@@ -100,9 +105,17 @@ export default function Header({ user, activeChat, onLogout, onMenuClick }) {
               alignItems: "center",
               justifyContent: "center",
             }}
-            onClick={onLogout}
+            onClick={handleLogout}
           >
-            <LogOut size={18} style={{ color: "#ef4444" }} />
+            {isLogoutLoading ? (
+              <Loader2 className="spin" size={20} style={{ color: "#ef4444" }} />
+            ) : (
+              <LogOut
+                size={20}
+                style={{ color: "#ef4444", cursor: "pointer", opacity: 0.7 }}
+                title="Logout"
+              />
+            )}
           </div>
         </div>
         <MoreVertical size={20} cursor="pointer" className="desktop-only" />

@@ -1,18 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import Signup from "../components/Signup";
-import SignIn from "../components/SignIn.Jsx";
+import SignIn from "../components/SignIn";
+import useAuthStore from "../store/useAuthStore";
 
-const WelcomeScreen = ({ onJoin }) => {
+const WelcomeScreen = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const { setError } = useAuthStore();
 
-  const handleAuth = (userData) => {
-    // For now, we just use the name (from signup) or email prefix (from signin) to join
-    if (userData) {
-      onJoin(userData);
-    }
-  };
+  // Clear errors when switching between login/signup
+  useEffect(() => {
+    setError(null);
+  }, [isLogin, setError]);
 
   return (
     <div
@@ -50,13 +50,11 @@ const WelcomeScreen = ({ onJoin }) => {
             <SignIn
               key="signin"
               onToggle={() => setIsLogin(false)}
-              onSignIn={handleAuth}
             />
           ) : (
             <Signup
               key="signup"
               onToggle={() => setIsLogin(true)}
-              onSignUp={handleAuth}
             />
           )}
         </AnimatePresence>

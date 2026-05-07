@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { loginApi } from "../api/auth/auth.api";
+import useAuthStore from "../store/useAuthStore";
+import { connectWebSocket } from "../config/socket";
+import ErrorMessage from "./common/ErrorMessage";
 
-const SignIn = ({ onToggle, onSignIn }) => {
+const SignIn = ({ onToggle }) => {
+  const { setUser, setLoginLoading, isLoginLoading, error, setError } = useAuthStore();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -11,6 +15,7 @@ const SignIn = ({ onToggle, onSignIn }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginLoading(true);
     try {
       const res = await loginApi(formData);
 
@@ -22,16 +27,21 @@ const SignIn = ({ onToggle, onSignIn }) => {
       // store user info
       localStorage.setItem("user", JSON.stringify(user));
 
-      // update parent state
-      onSignIn(user);
-
+      // update global state
+      setUser(user);
+      setError(null); // Clear any previous errors
+      connectWebSocket(token);
     } catch (error) {
       console.log(error);
+      const message = error.response?.data?.message || "Invalid email or password";
+      setError(message);
+    } finally {
+      setLoginLoading(false);
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -44,6 +54,8 @@ const SignIn = ({ onToggle, onSignIn }) => {
       <p style={{ color: "#94a3b8", marginBottom: "32px" }}>
         Enter your details to access your account
       </p>
+
+      <ErrorMessage message={error} />
 
       <form onSubmit={handleSubmit}>
         <div style={{ position: "relative", marginBottom: "20px" }}>
@@ -83,7 +95,7 @@ const SignIn = ({ onToggle, onSignIn }) => {
           className="btn-primary"
           style={{ width: "100%", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", fontSize: "1.1rem" }}
         >
-          Sign In <LogIn size={20} />
+          Sign In {isLoginLoading ? <Loader2 className="spin" size={20} /> : <LogIn size={20} />}
         </button>
       </form>
 

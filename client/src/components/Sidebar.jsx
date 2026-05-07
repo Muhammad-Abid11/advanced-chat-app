@@ -1,7 +1,12 @@
-import { Hash, Search, PlusCircle, LogOut, X } from "lucide-react";
+import { Hash, Search, PlusCircle, LogOut, X, Loader2 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import useAuthStore from "../store/useAuthStore";
+import { useLogout } from "../utils/auth.utils";
 
-export default function Sidebar({ user, onLogout, onClose }) {
+export default function Sidebar({ onClose }) {
+  const { user, isLogoutLoading } = useAuthStore();
+  const handleLogout = useLogout();
+
   return (
     <div
       className="glass"
@@ -216,12 +221,16 @@ export default function Sidebar({ user, onLogout, onClose }) {
           </div>
           <div style={{ fontSize: "0.75rem", color: "#22c55e" }}>Online</div>
         </div>
-        <LogOut
-          size={20}
-          style={{ color: "#ef4444", cursor: "pointer", opacity: 0.7 }}
-          onClick={onLogout}
-          title="Logout"
-        />
+        {isLogoutLoading ? (
+          <Loader2 className="spin" size={20} style={{ color: "#ef4444" }} />
+        ) : (
+          <LogOut
+            size={20}
+            style={{ color: "#ef4444", cursor: "pointer", opacity: 0.7 }}
+            onClick={handleLogout}
+            title="Logout"
+          />
+        )}
       </div>
     </div>
   );

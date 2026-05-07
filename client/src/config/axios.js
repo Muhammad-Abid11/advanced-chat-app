@@ -25,12 +25,12 @@ api.interceptors.response.use(
     (error) => {
         const status = error?.response?.status;
 
-        if (status === 401) {
+        if (status === 401 && window.location.pathname !== "/login" && window.location.pathname !== "/") {
             // Token expired / invalid
             localStorage.removeItem("token");
 
             // redirect to login
-            window.location.href = "/";
+            window.location.href = "/login";
         }
 
         return Promise.reject(error);
