@@ -1,11 +1,21 @@
 import { Hash, Search, PlusCircle, LogOut, X, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
+import useUserStore from "../store/useUserStore";
 import { useLogout } from "../utils/auth.utils";
 
 export default function Sidebar({ onClose }) {
   const { user, isLogoutLoading } = useAuthStore();
+  const { users, fetchUsers } = useUserStore();
   const handleLogout = useLogout();
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Except current user
+  const filteredUsers = users.filter((u) => u._id !== user?._id);
 
   return (
     <div
@@ -122,10 +132,10 @@ export default function Sidebar({ onClose }) {
         >
           Direct Messages
         </div>
-        {["Sarah Miller", "John Doe", "Alice Freeman"].map((name) => (
+        {filteredUsers?.map((singleUser) => (
           <NavLink
-            key={name}
-            to={`/chat/${name.toLowerCase().replace(" ", "-")}`}
+            key={singleUser._id}
+            to={`/chat/${singleUser.name}`}
             onClick={onClose}
             style={({ isActive }) => ({
               padding: "12px 16px",
@@ -158,7 +168,7 @@ export default function Sidebar({ onClose }) {
                     color: isActive ? "#fff" : "#94a3b8",
                   }}
                 >
-                  {name
+                  {singleUser.name
                     .split(" ")
                     .map((n) => n[0])
                     .join("")}
@@ -167,7 +177,7 @@ export default function Sidebar({ onClose }) {
                   color: isActive ? "#fff" : "#94a3b8",
                   fontWeight: isActive ? "600" : "400"
                 }}>
-                  {name}
+                  {singleUser.name}
                 </span>
                 <div
                   style={{

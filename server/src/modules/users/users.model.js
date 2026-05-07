@@ -1,0 +1,1 @@
+export { default as User } from "../auth/auth.model.js";
