@@ -7,56 +7,51 @@ import Header from "../components/Header";
 import useAuthStore from "../store/useAuthStore";
 import WelcomeChatScreen from "../components/common/WelcomeChatScreen";
 
-const DUMMY_MESSAGES = [
-  {
-    id: 1,
-    sender: "Sarah",
-    text: "Hey there! How is the new UI looking?",
-    time: "10:05 AM",
-    isMe: false,
-  },
-  {
-    id: 2,
-    sender: "Me",
-    text: "It looks amazing! The glassmorphism effect is sleek.",
-    time: "10:06 AM",
-    isMe: true,
-  },
-  {
-    id: 3,
-    sender: "John",
-    text: "Agreed, the animations are super smooth.",
-    time: "10:07 AM",
-    isMe: false,
-  },
-  {
-    id: 4,
-    sender: "Sarah",
-    text: "Can we add voice messages later?",
-    time: "10:08 AM",
-    isMe: false,
-  },
-];
+import useChatStore from "../store/useChatStore";
+import { getSocket } from "../config/socket";
 
 const ChatScreen = () => {
   const { user } = useAuthStore();
   const { chatId } = useParams();
+  const { messages, getMessages, sendMessage, subscribeToMessages, unsubscribeFromMessages, chats, setSelectedChat, selectedChat } = useChatStore();
   
-  // Format chatId back to readable name
-  const getChatName = (id) => {
-    if (!id) return "General";
-    return id.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-  };
-
-  const activeChat = chatId ? {
-    name: getChatName(chatId),
-    isChannel: ["general", "designers", "development", "random"].includes(chatId?.toLowerCase()),
-  } : null;
-
-  const [messages, setMessages] = useState(DUMMY_MESSAGES);
   const [input, setInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (chatId) {
+      getMessages(chatId);
+      
+      // Join socket room
+      const socket = getSocket();
+      if (socket) {
+        socket.emit("join chat", chatId);
+      }
+
+      // If selectedChat is not set or different, fetch/set it
+      if (!selectedChat || selectedChat._id !== chatId) {
+        const chat = chats.find(c => c._id === chatId);
+        if (chat) {
+          setSelectedChat(chat);
+        } else {
+          // Fetch from API if not in list
+          useChatStore.getState().getChatById(chatId);
+        }
+      }
+    }
+
+    subscribeToMessages();
+
+    return () => {
+      unsubscribeFromMessages();
+    };
+  }, [chatId, getMessages, subscribeToMessages, unsubscribeFromMessages, setSelectedChat]);
+
+  const activeChat = selectedChat ? {
+    name: selectedChat.participants.find(p => p._id !== user?._id)?.name || "Chat",
+    isChannel: false,
+  } : null;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,23 +61,13 @@ const ChatScreen = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !chatId) return;
 
-    const newMessage = {
-      id: Date.now(),
-      sender: user?.name || user?.email || "Me",
-      text: input,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isMe: true,
-    };
-
-    setMessages([...messages, newMessage]);
-    setInput("");
+    const content = input;
+    setInput(""); // Clear input early for better UX
+    await sendMessage(content, chatId);
   };
 
   return (
@@ -135,82 +120,87 @@ const ChatScreen = () => {
                 gap: "20px",
               }}
             >
-              {messages.map((msg) => (
-                <motion.div
-                  initial={{ opacity: 0, x: msg.isMe ? 20 : -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  key={msg.id}
-                  style={{
-                    alignSelf: msg.isMe ? "flex-end" : "flex-start",
-                    maxWidth: "70%",
-                    display: "flex",
-                    gap: "12px",
-                    flexDirection: msg.isMe ? "row-reverse" : "row",
-                  }}
-                >
-                  {!msg.isMe && (
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "12px",
-                        background: "rgba(255,255,255,0.05)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "0.75rem",
-                        fontWeight: "bold",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {msg.sender[0]}
-                    </div>
-                  )}
-                  <div>
-                    {!msg.isMe && (
+              {messages.map((msg) => {
+                const isMe = msg.senderId._id === user?._id;
+                const senderName = msg.senderId.name || "User";
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, x: isMe ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    key={msg._id}
+                    style={{
+                      alignSelf: isMe ? "flex-end" : "flex-start",
+                      maxWidth: "70%",
+                      display: "flex",
+                      gap: "12px",
+                      flexDirection: isMe ? "row-reverse" : "row",
+                    }}
+                  >
+                    {!isMe && (
                       <div
                         style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "12px",
+                          background: "rgba(255,255,255,0.05)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           fontSize: "0.75rem",
-                          color: "#94a3b8",
-                          marginBottom: "4px",
-                          marginLeft: "4px",
+                          fontWeight: "bold",
+                          flexShrink: 0,
                         }}
                       >
-                        {msg.sender}
+                        {senderName[0]?.toUpperCase()}
                       </div>
                     )}
-                    <div
-                      style={{
-                        padding: "12px 18px",
-                        borderRadius: msg.isMe
-                          ? "20px 20px 4px 20px"
-                          : "20px 20px 20px 4px",
-                        background: msg.isMe
-                          ? "linear-gradient(135deg, var(--primary), var(--secondary))"
-                          : "rgba(255,255,255,0.05)",
-                        border: msg.isMe
-                          ? "none"
-                          : "1px solid rgba(255,255,255,0.1)",
-                        color: "#fff",
-                        fontSize: "0.95rem",
-                        lineHeight: "1.5",
-                      }}
-                    >
-                      {msg.text}
+                    <div>
+                      {!isMe && (
+                        <div
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "#94a3b8",
+                            marginBottom: "4px",
+                            marginLeft: "4px",
+                          }}
+                        >
+                          {senderName}
+                        </div>
+                      )}
+                      <div
+                        style={{
+                          padding: "12px 18px",
+                          borderRadius: isMe
+                            ? "20px 20px 4px 20px"
+                            : "20px 20px 20px 4px",
+                          background: isMe
+                            ? "linear-gradient(135deg, var(--primary), var(--secondary))"
+                            : "rgba(255,255,255,0.05)",
+                          border: isMe
+                            ? "none"
+                            : "1px solid rgba(255,255,255,0.1)",
+                          color: "#fff",
+                          fontSize: "0.95rem",
+                          lineHeight: "1.5",
+                        }}
+                      >
+                        {msg.content}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.7rem",
+                          color: "#64748b",
+                          marginTop: "4px",
+                          textAlign: isMe ? "right" : "left",
+                        }}
+                      >
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
-                    <div
-                      style={{
-                        fontSize: "0.7rem",
-                        color: "#64748b",
-                        marginTop: "4px",
-                        textAlign: msg.isMe ? "right" : "left",
-                      }}
-                    >
-                      {msg.time}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
