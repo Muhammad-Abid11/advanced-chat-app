@@ -52,18 +52,17 @@ export const createChat = async (req, res) => {
 // Get all chats for the logged-in user
 export const getAllChatsLastMessage = async (req, res) => {
     try {
-        Chat.find({ participants: { $elemMatch: { $eq: req.user.user_id } } })
+        let results = await Chat.find({ participants: { $elemMatch: { $eq: req.user.user_id } } })
             .populate("participants", "-password")
             .populate("groupAdmin", "-password")
             .populate("lastMessage")
             .sort({ updatedAt: -1 })
-            .then(async (results) => {
-                results = await User.populate(results, {
-                    path: "lastMessage.senderId",
-                    select: "name email",
-                });
-                res.status(200).send(results);
-            });
+
+        results = await User.populate(results, {
+            path: "lastMessage.senderId",
+            select: "name email",
+        });
+        res.status(200).json(results);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

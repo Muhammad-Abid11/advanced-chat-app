@@ -18,10 +18,13 @@ const registerUser = async (req, res) => {
         const newUser = await User.create({ name, email, password: hashedPassword });
         const token = createJWT(newUser);
 
+        // remove password safely using destructuring assignment
+        const { password: _, ...safeUser } = newUser.toObject();
+
         return res.status(201).json({
             message: "User registered successfully",
             token,
-            user: newUser,
+            user: safeUser,
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -44,10 +47,12 @@ const loginUser = async (req, res) => {
 
         const token = createJWT(user);
 
+        // remove password safely using destructuring assignment
+        const { password: _, ...safeUser } = user.toObject();
         return res.status(200).json({
             message: "User logged in successfully",
             token,
-            user,
+            user: safeUser,
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

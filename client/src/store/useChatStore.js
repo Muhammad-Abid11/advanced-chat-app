@@ -16,7 +16,17 @@ const useChatStore = create((set, get) => ({
         try {
             const res = await createChatApi(userId);
             const newChat = res.data;
-            set({ selectedChat: newChat, chats: [...get().chats, newChat] });
+
+            // ✅ Avoid adding duplicate if chat already exists
+            set((state) => {
+                const exists = state.chats.some(c => c._id === newChat._id);
+                return {
+                    selectedChat: newChat,
+                    chats: exists ? state.chats : [...state.chats, newChat],
+                };
+            });
+
+            return newChat; // ✅ Return so caller can navigate
         } catch (error) {
             console.error("Failed to create chat:", error);
         }
@@ -75,6 +85,9 @@ const useChatStore = create((set, get) => ({
         const socket = getSocket();
         if (!socket) return;
 
+        // ✅ Remove any existing listener before adding a new one
+        socket.off("message received");
+
         socket.on("message received", (newMessage) => {
             const { selectedChat } = get();
             
@@ -86,9 +99,14 @@ const useChatStore = create((set, get) => ({
                     return { messages: [...state.messages, newMessage] };
                 });
             }
-            
-            // Refresh chats list to update last message
-            get().getChats();
+            // ✅ Update lastMessage locally instead of re-fetching all chats
+            set((state) => ({
+                chats: state.chats.map((chat) =>
+                    chat._id === newMessage.chatId._id
+                        ? { ...chat, lastMessage: newMessage }
+                        : chat
+                ),
+            }));
         });
     },
 

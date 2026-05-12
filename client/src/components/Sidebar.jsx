@@ -5,12 +5,12 @@ import useAuthStore from "../store/useAuthStore";
 import useUserStore from "../store/useUserStore";
 import useChatStore from "../store/useChatStore";
 import { useLogout } from "../utils/auth.utils";
-import { createChatApi } from "../api/chat/chat.api";
 
 export default function Sidebar({ onClose }) {
   const { user, isLogoutLoading } = useAuthStore();
   const { users, fetchUsers } = useUserStore();
-  const { chats, getChats, setSelectedChat } = useChatStore();
+  // ✅ Pull createChat from the store
+  const { chats, getChats, setSelectedChat, createChat } = useChatStore();
   const handleLogout = useLogout();
   const navigate = useNavigate();
 
@@ -21,10 +21,8 @@ export default function Sidebar({ onClose }) {
 
   const handleCreateChat = async (userId) => {
     try {
-      const res = await createChatApi(userId);
-      const chat = res.data;
-      setSelectedChat(chat);
-      navigate(`/chat/${chat._id}`);
+      const chat = await createChat(userId);
+      if (chat) navigate(`/chat/${chat._id}`);
       onClose(); // Close sidebar on mobile
     } catch (error) {
       console.error("Error creating chat:", error);
