@@ -7,13 +7,20 @@ const initSocket = (server) => {
     io = new Server(server, {
         cors: {
             origin: process.env.FRONTEND_URL,
+            credentials: true,
         },
     });
 
     // Middleware to verify token from handshake
     // Authenticate Socket connection by token
     io.use((socket, next) => {
-        const token = socket.handshake.auth.token;
+        // when token is stored in localStorage or sessionStorage
+        // const token = socket.handshake.auth.token;
+
+        // when token is stored in httpOnly cookies (secure cookies)
+        const cookieHeader = socket.handshake.headers.cookie;
+        const token = cookieHeader?.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
         if (!token) {
             return next(new Error("Authentication error: No token provided"));
         }

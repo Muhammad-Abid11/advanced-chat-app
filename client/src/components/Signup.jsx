@@ -19,12 +19,12 @@ const Signup = ({ onToggle }) => {
     setRegisterLoading(true);
     try {
       const res = await registerApi(formData);
-      const { token, user } = res?.data || {};
+      const { user } = res?.data || {};
 
       // update global state
       setUser(user);
       setError(null);
-      connectWebSocket(token);
+      connectWebSocket();
     } catch (error) {
       console.log(error);
       const message = error.response?.data?.message || "Registration failed. Try again.";

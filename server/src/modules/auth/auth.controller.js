@@ -1,3 +1,4 @@
+import { clearTokenCookie, setTokenCookie } from "../../utils/cookie.util.js";
 import { createJWT } from "../../utils/generateToken.js";
 import User from "./auth.model.js";
 import bcrypt from "bcryptjs";
@@ -21,9 +22,10 @@ const registerUser = async (req, res) => {
         // remove password safely using destructuring assignment
         const { password: _, ...safeUser } = newUser.toObject();
 
+        // ✅ Add httpOnly: true
+        setTokenCookie(res, token);
         return res.status(201).json({
             message: "User registered successfully",
-            token,
             user: safeUser,
         });
     } catch (err) {
@@ -49,9 +51,21 @@ const loginUser = async (req, res) => {
 
         // remove password safely using destructuring assignment
         const { password: _, ...safeUser } = user.toObject();
+
+        // ✅ Add httpOnly: true ( when you don't have cookie.util.js file)
+        /*
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV !== "development",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+        */
+
+        setTokenCookie(res, token);
+
         return res.status(200).json({
             message: "User logged in successfully",
-            token,
             user: safeUser,
         });
     } catch (err) {
@@ -61,7 +75,7 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
-        res.clearCookie("jwt");
+        clearTokenCookie(res);
         return res.status(200).json({ message: "User logged out successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });

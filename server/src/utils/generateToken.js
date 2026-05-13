@@ -4,7 +4,7 @@ export const createJWT = (user) => {
     return jwt.sign(
         { user_id: user._id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: "1d" } // token valid for 1 day
+        { expiresIn: process.env.TOKEN_EXPIRES || '7d' }
     );
 };
 
@@ -14,6 +14,7 @@ export const isTokenValid = (token) => {
 
 export const verifyToken = (req, res, next) => {
     try {
+        /* 
         const authHeader = req.headers.authorization;
 
         if (!authHeader) {
@@ -35,6 +36,19 @@ export const verifyToken = (req, res, next) => {
         const decodedToken = isTokenValid(token);
 
         req.user = decodedToken; // attach user data
+        next();
+        */
+       const token = req.cookies.token;
+
+        if (!token) {
+            return res.status(401).json({
+                message: "No token found",
+            });
+        }
+
+        const decoded = isTokenValid(token)
+        req.user = decoded;
+
         next();
     } catch (err) {
         return res.status(401).json({ message: "Invalid or expired token" });

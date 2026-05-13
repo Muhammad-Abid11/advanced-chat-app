@@ -3,12 +3,11 @@ import { io } from "socket.io-client";
 let socket = null;
 
 // 🔌 Connect socket
-export const connectWebSocket = (token) => {
+export const connectWebSocket = () => {
     if (socket) return socket;
     socket = io(`${import.meta.env.VITE_API_BASE_URL}`, {
-        auth: {
-            token,
-        },
+        // auth: { token } // when token is stored in localStorage or sessionStorage
+        withCredentials: true, // send token from httpOnly cookies
         transports: ["websocket"], // better performance
     });
 

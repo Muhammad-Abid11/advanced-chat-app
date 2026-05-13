@@ -18,19 +18,12 @@ const SignIn = ({ onToggle }) => {
     setLoginLoading(true);
     try {
       const res = await loginApi(formData);
-
-      const { token, user } = res.data;
-
-      // store token
-      localStorage.setItem("token", token);
-
-      // store user info
-      localStorage.setItem("user", JSON.stringify(user));
+      const { user } = res.data;
 
       // update global state
       setUser(user);
       setError(null); // Clear any previous errors
-      connectWebSocket(token);
+      connectWebSocket();
     } catch (error) {
       console.log(error);
       const message = error.response?.data?.message || "Invalid email or password";
