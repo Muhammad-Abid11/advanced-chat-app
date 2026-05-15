@@ -1,15 +1,23 @@
 import jwt from "jsonwebtoken";
 
-export const createJWT = (user) => {
+export const createAccessToken = (user) => {
     return jwt.sign(
         { user_id: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.TOKEN_EXPIRES || '7d' }
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRE || '30m' }
     );
 };
 
-export const isTokenValid = (token) => {
-    return jwt.verify(token, process.env.JWT_SECRET);
+export const createRefreshToken = (user) => {
+    return jwt.sign(
+        { user_id: user._id, email: user.email },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRE || '1d' }
+    );
+};
+
+export const isTokenValid = (token, secret = process.env.ACCESS_TOKEN_SECRET) => {
+    return jwt.verify(token, secret);
 };
 
 export const verifyToken = (req, res, next) => {
@@ -38,15 +46,15 @@ export const verifyToken = (req, res, next) => {
         req.user = decodedToken; // attach user data
         next();
         */
-       const token = req.cookies.token;
+       const accessToken = req.cookies.accessToken;
 
-        if (!token) {
+        if (!accessToken) {
             return res.status(401).json({
-                message: "No token found",
+                message: "No access token found",
             });
         }
 
-        const decoded = isTokenValid(token)
+        const decoded = isTokenValid(accessToken)
         req.user = decoded;
 
         next();

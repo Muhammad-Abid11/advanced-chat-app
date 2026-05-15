@@ -22,16 +22,30 @@ api.interceptors.request.use(
 );
 */
 
-// 🚨 Response Interceptor (handle unauthorized) 
+// 🚨 Response Interceptor (handle unauthorized & refresh token) 
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
+        const originalRequest = error.config;
         const status = error?.response?.status;
 
-        if (status === 401 && window.location.pathname !== "/login" && window.location.pathname !== "/") {
+        // If error is 401 and not already retried
+        if (status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
 
-            // redirect to login
-            window.location.href = "/login";
+            try {
+                // Call refresh endpoint
+                await api.post("/api/auth/refresh");
+                
+                // Retry the original request
+                return api(originalRequest);
+            } catch (refreshError) {
+                // If refresh fails, redirect to login
+                if (window.location.pathname !== "/login" && window.location.pathname !== "/") {
+                    window.location.href = "/login";
+                }
+                return Promise.reject(refreshError);
+            }
         }
 
         return Promise.reject(error);

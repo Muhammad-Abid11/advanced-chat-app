@@ -1,5 +1,5 @@
-import { clearTokenCookie, setTokenCookie } from "../../utils/cookie.util.js";
-import { createJWT } from "../../utils/generateToken.js";
+import { clearTokenCookies, setTokenCookies } from "../../utils/cookie.util.js";
+import { createAccessToken, createRefreshToken, isTokenValid } from "../../utils/generateToken.js";
 import User from "./auth.model.js";
 import bcrypt from "bcryptjs";
 
@@ -17,13 +17,16 @@ const registerUser = async (req, res) => {
 
         // save user
         const newUser = await User.create({ name, email, password: hashedPassword });
-        const token = createJWT(newUser);
+        // generate tokens
+        const accessToken = createAccessToken(newUser);
+        const refreshToken = createRefreshToken(newUser);
 
         // remove password safely using destructuring assignment
         const { password: _, ...safeUser } = newUser.toObject();
 
         // ✅ Add httpOnly: true
-        setTokenCookie(res, token);
+        // set cookies
+        setTokenCookies(res, accessToken, refreshToken);
         return res.status(201).json({
             message: "User registered successfully",
             user: safeUser,
@@ -47,7 +50,9 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ message: "Invalid password" });
         }
 
-        const token = createJWT(user);
+        // generate tokens
+        const accessToken = createAccessToken(user);
+        const refreshToken = createRefreshToken(user);
 
         // remove password safely using destructuring assignment
         const { password: _, ...safeUser } = user.toObject();
@@ -62,7 +67,8 @@ const loginUser = async (req, res) => {
         });
         */
 
-        setTokenCookie(res, token);
+        // set cookies
+        setTokenCookies(res, accessToken, refreshToken);
 
         return res.status(200).json({
             message: "User logged in successfully",
@@ -75,7 +81,7 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
-        clearTokenCookie(res);
+        clearTokenCookies(res);
         return res.status(200).json({ message: "User logged out successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -92,4 +98,30 @@ const getCurrentUser = async (req, res) => {
     }
 }
 
-export { registerUser, loginUser, logoutUser, getCurrentUser }
+const refreshToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({ message: "No refresh token found" });
+        }
+
+        const decoded = isTokenValid(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        
+        const user = await User.findById(decoded.user_id);
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+
+        const accessToken = createAccessToken(user);
+        const newRefreshToken = createRefreshToken(user);
+
+        setTokenCookies(res, accessToken, newRefreshToken);
+
+        res.status(200).json({ message: "Token refreshed successfully" });
+    } catch (err) {
+        res.status(401).json({ message: "Invalid or expired refresh token" });
+    }
+}
+
+export { registerUser, loginUser, logoutUser, getCurrentUser, refreshToken }

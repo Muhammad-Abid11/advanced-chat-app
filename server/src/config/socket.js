@@ -19,7 +19,7 @@ const initSocket = (server) => {
 
         // when token is stored in httpOnly cookies (secure cookies)
         const cookieHeader = socket.handshake.headers.cookie;
-        const token = cookieHeader?.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+        const token = cookieHeader?.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1];
 
         if (!token) {
             return next(new Error("Authentication error: No token provided"));
