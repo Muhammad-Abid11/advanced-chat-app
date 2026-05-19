@@ -1,12 +1,13 @@
 import { Server } from "socket.io";
 import { isTokenValid } from "../utils/generateToken.js";
+import { FRONTEND_URL } from "../constants/env.constant.js";
 
 let io;
 
 const initSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: process.env.FRONTEND_URL,
+            origin: FRONTEND_URL,
             credentials: true,
         },
     });

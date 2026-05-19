@@ -1,22 +1,23 @@
 import jwt from "jsonwebtoken";
+import { ACCESS_TOKEN_EXPIRE, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_EXPIRE, REFRESH_TOKEN_SECRET } from "../constants/env.constant.js";
 
 export const createAccessToken = (user) => {
     return jwt.sign(
         { user_id: user._id, email: user.email },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: process.env.ACCESS_TOKEN_EXPIRE || '30m' }
+        ACCESS_TOKEN_SECRET,
+        { expiresIn: ACCESS_TOKEN_EXPIRE || '30m' }
     );
 };
 
 export const createRefreshToken = (user) => {
     return jwt.sign(
         { user_id: user._id, email: user.email },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: process.env.REFRESH_TOKEN_EXPIRE || '1d' }
+        REFRESH_TOKEN_SECRET,
+        { expiresIn: REFRESH_TOKEN_EXPIRE || '1d' }
     );
 };
 
-export const isTokenValid = (token, secret = process.env.ACCESS_TOKEN_SECRET) => {
+export const isTokenValid = (token, secret = ACCESS_TOKEN_SECRET) => {
     return jwt.verify(token, secret);
 };
 
@@ -40,7 +41,7 @@ export const verifyToken = (req, res, next) => {
             return res.status(401).json({ message: "Access denied" });
         }
 
-        // const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // const decoded = jwt.verify(token, JWT_SECRET);
         const decodedToken = isTokenValid(token);
 
         req.user = decodedToken; // attach user data

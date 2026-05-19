@@ -4,12 +4,13 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes.js";
 import userRoutes from "./modules/users/users.routes.js";
 import chatRoutes from "./modules/chat/chat.routes.js";
+import { FRONTEND_URL } from "./constants/env.constant.js";
 
 const app = express();
 
 app.use(cors(
     {
-        origin: process.env.FRONTEND_URL,
+        origin: FRONTEND_URL,
         credentials: true,
     }
 ));

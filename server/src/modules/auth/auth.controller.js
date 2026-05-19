@@ -1,3 +1,4 @@
+import { REFRESH_TOKEN_SECRET } from "../../constants/env.constant.js";
 import { clearTokenCookies, setTokenCookies } from "../../utils/cookie.util.js";
 import { createAccessToken, createRefreshToken, isTokenValid } from "../../utils/generateToken.js";
 import User from "./auth.model.js";
@@ -106,7 +107,7 @@ const refreshToken = async (req, res) => {
             return res.status(401).json({ message: "No refresh token found" });
         }
 
-        const decoded = isTokenValid(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const decoded = isTokenValid(refreshToken, REFRESH_TOKEN_SECRET);
         
         const user = await User.findById(decoded.user_id);
         if (!user) {
