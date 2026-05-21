@@ -49,8 +49,12 @@ const ChatScreen = () => {
   }, [chatId, getMessages, subscribeToMessages, unsubscribeFromMessages, setSelectedChat]);
 
   const activeChat = selectedChat ? {
-    name: selectedChat.participants.find(p => p._id !== user?._id)?.name || "Chat",
+    name: selectedChat.isGroupChat 
+      ? selectedChat.chatName 
+      : (selectedChat.participants.find(p => p._id !== user?._id)?.name || "Chat"),
     isChannel: false,
+    isGroupChat: selectedChat.isGroupChat,
+    participantsCount: selectedChat.participants.length,
   } : null;
 
   const scrollToBottom = () => {
