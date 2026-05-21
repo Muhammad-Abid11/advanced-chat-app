@@ -27,10 +27,21 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+
+        // this will avoid to trigger refresh token when user is not logged in 
+        // ( not have access token in cookies)
+        // otherwise it will cause infinite loop of refresh token, because 
+        // the refresh endpoint will also return 401 unauthorized error, and the 
+        // interceptor will try to refresh the token again, and so on.
+        
+        const isAuthRoute =
+            originalRequest.url.includes("/login") ||
+            originalRequest.url.includes("/register") ||
+            originalRequest.url.includes("/refresh");
         const status = error?.response?.status;
 
         // If error is 401 and not already retried
-        if (status === 401 && !originalRequest._retry) {
+        if (status === 401 && !originalRequest._retry && !isAuthRoute) {
             originalRequest._retry = true;
 
             try {
