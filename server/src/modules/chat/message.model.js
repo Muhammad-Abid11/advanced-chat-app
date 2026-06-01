@@ -9,6 +9,10 @@ const messageSchema = new Schema({
         type: String,
         trim: true
     },
+    image: {
+        type: String,
+        default: ""
+    },
     chatId: {
         type: Schema.Types.ObjectId,
         ref: 'Chat'

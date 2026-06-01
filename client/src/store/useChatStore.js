@@ -63,9 +63,20 @@ const useChatStore = create((set, get) => ({
         }
     },
 
-    sendMessage: async (content, chatId) => {
+    sendMessage: async (content, chatId, imageFile) => {
         try {
-            const res = await sendMessageApi(content, chatId);
+            let data;
+            if (imageFile) {
+                data = new FormData(); // FormData is used to send files to the server (multipart/form-data). This is necessary because regular JSON objects cannot carry file data.
+                data.append("content", content); // appends the text content to the FormData object
+                data.append("chatId", chatId); // appends the chat ID to the FormData object
+                data.append("image", imageFile); // appends the file to the FormData object
+            } else {
+                // If no file is being sent, use a regular JSON object
+                data = { content, chatId };
+            }
+            
+            const res = await sendMessageApi(data);
             const newMessage = res.data;
             
             set((state) => {

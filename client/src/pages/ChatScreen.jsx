@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Send, PlusCircle } from "lucide-react";
+import { Send, PlusCircle, X } from "lucide-react";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import useAuthStore from "../store/useAuthStore";
@@ -16,8 +17,11 @@ const ChatScreen = () => {
   const { messages, getMessages, sendMessage, subscribeToMessages, unsubscribeFromMessages, chats, setSelectedChat, selectedChat } = useChatStore();
   
   const [input, setInput] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (chatId) {
@@ -67,11 +71,37 @@ const ChatScreen = () => {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() || !chatId) return;
+    if ((!input.trim() && !imageFile) || !chatId) return;
 
     const content = input;
+    const file = imageFile;
+    
     setInput(""); // Clear input early for better UX
-    await sendMessage(content, chatId);
+    setImageFile(null);
+    setImagePreview(null);
+
+    await sendMessage(content, chatId, file);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size exceeds 5MB. Please upload a smaller image.");
+        e.target.value = "";
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -189,7 +219,20 @@ const ChatScreen = () => {
                           lineHeight: "1.5",
                         }}
                       >
-                        {msg.content}
+                        {msg.image && (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL + msg.image}`} 
+                            alt="attachment" 
+                            style={{ 
+                              maxWidth: "100%", 
+                              maxHeight: "200px", 
+                              borderRadius: "8px", 
+                              marginBottom: msg.content ? "8px" : "0",
+                              display: "block"
+                            }} 
+                          />
+                        )}
+                        {msg.content && <span>{msg.content}</span>}
                       </div>
                       <div
                         style={{
@@ -208,6 +251,25 @@ const ChatScreen = () => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Image Preview Area */}
+            {imagePreview && (
+              <div style={{ padding: "0 24px", position: "relative", display: "inline-block", alignSelf: "flex-start" }}>
+                <div style={{ position: "relative" }}>
+                  <img src={imagePreview} alt="Preview" style={{ height: "60px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)" }} />
+                  <button 
+                    onClick={removeImage}
+                    style={{ 
+                      position: "absolute", top: "-8px", right: "-8px", 
+                      background: "rgba(0,0,0,0.6)", borderRadius: "50%", 
+                      color: "white", padding: "2px", border: "none", cursor: "pointer" 
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Input Bar */}
             <form
               onSubmit={handleSend}
@@ -219,7 +281,15 @@ const ChatScreen = () => {
                 alignItems: "center",
               }}
             >
+              <input 
+                type="file" 
+                accept="image/*" 
+                ref={fileInputRef} 
+                style={{ display: "none" }} 
+                onChange={handleImageChange}
+              />
               <div
+                onClick={() => fileInputRef.current?.click()}
                 style={{
                   width: "40px",
                   height: "40px",

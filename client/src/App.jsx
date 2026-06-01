@@ -7,6 +7,7 @@ import ChatScreen from "./pages/ChatScreen";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 import useAuthStore from "./store/useAuthStore";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   const { user, loading, checkAuth } = useAuthStore();
@@ -27,6 +28,7 @@ function App() {
 
   return (
     <div className="app-container">
+      <Toaster position="top-right"/>
       {/* Background Orbs */}
       <div className="bg-blobs">
         <div className="blob blob-1"></div>

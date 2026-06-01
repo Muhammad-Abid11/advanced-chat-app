@@ -6,14 +6,24 @@ import { getIO } from "../../config/socket.js";
 // Send a new message
 export const sendMessage = async (req, res) => {
     const { content, chatId } = req.body;
+    let imagePath = "";
 
-    if (!content || !chatId) {
-        return res.status(400).json({ message: "Invalid data passed into request" });
+    if (req.file) {
+        imagePath = `/uploads/${req.file.filename}`;
+    }
+
+    if (!content && !imagePath) {
+        return res.status(400).json({ message: "Message content or image is required" });
+    }
+
+    if (!chatId) {
+        return res.status(400).json({ message: "Chat ID is required" });
     }
 
     const newMessage = {
         senderId: req.user.user_id,
-        content: content,
+        content: content || "",
+        image: imagePath,
         chatId: chatId,
     };
 
