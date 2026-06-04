@@ -1,4 +1,6 @@
 import multer from "multer";
+/*
+// ------------- Multer.DiskStorage -------------
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from 'url';
@@ -21,6 +23,11 @@ const storage = multer.diskStorage({
         cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
+*/
+
+// ------------- Multer.MemoryStorage -------------
+const storage = multer.memoryStorage();
+// now instead of req.file.path we can use file's buffer in bytes => (req.file.buffer)
 
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];

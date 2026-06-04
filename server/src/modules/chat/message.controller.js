@@ -15,6 +15,7 @@ export const sendMessage = async (req, res) => {
         // imagePath = `/uploads/${req.file.filename}`; 
 
         // upload to cloud storage(try catch finally is due to delete local file either image upload success or error)
+        /*         
         try {
             const result = await uploadChatImage(req.file.path); // uploaded image to cloudinary
             imagePath = result.secure_url; // get uploaded image url
@@ -23,6 +24,12 @@ export const sendMessage = async (req, res) => {
         } finally {
             await fs.unlink(req.file.path).catch(err => console.error("Error deleting local file:", err)); // delete local file
         }
+        */
+
+        // 2. Multer.MemoryStorage (buffer), no need for try catch finally as no local file is saved here
+        const result = await uploadChatImage(req.file.buffer); // uploaded image to cloudinary
+        imagePath = result.secure_url; // get uploaded image url
+
     }
 
     if (!content && !imagePath) {
