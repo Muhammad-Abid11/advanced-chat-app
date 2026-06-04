@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { Send, PlusCircle, X } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import imageCompression from "browser-image-compression";
+
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import useAuthStore from "../store/useAuthStore";
@@ -83,16 +85,35 @@ const ChatScreen = () => {
     await sendMessage(content, chatId, file);
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size exceeds 5MB. Please upload a smaller image.");
+      try {
+        if (file.size > 20 * 1024 * 1024) {
+        toast.error("Image size exceeds 20MB limit. Please select a smaller file.");
         e.target.value = "";
         return;
       }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+        const options = {
+          maxSizeMB: 1,        // max file size to compress (1MB)
+          maxWidthOrHeight: 1920, // max width/height
+          useWebWorker: true,
+          fileType: "image/jpeg", // compress to jpeg
+          initialQuality: 0.8 // 80% quality
+        };
+
+        toast.loading("Compressing image...");
+        const compressedFile = await imageCompression(file, options);
+        toast.dismiss();
+        // console.log("Original size:", file.size / 1024 / 1024, "MB");
+        // console.log("Compressed size:", compressedFile.size / 1024 / 1024, "MB");
+
+        setImageFile(compressedFile);
+        setImagePreview(URL.createObjectURL(compressedFile));
+      } catch (error) {
+        toast.error("Error compressing image");
+        console.log(error);
+      }
     }
   };
 
