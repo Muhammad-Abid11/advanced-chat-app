@@ -1,7 +1,9 @@
+import fs from "fs/promises";
 import Message from "./message.model.js";
 import Chat from "./chat.model.js";
 import User from "../auth/auth.model.js";
 import { getIO } from "../../config/socket.js";
+import { uploadChatImage } from "../../services/upload.cloudinary.js";
 
 // Send a new message
 export const sendMessage = async (req, res) => {
@@ -9,7 +11,18 @@ export const sendMessage = async (req, res) => {
     let imagePath = "";
 
     if (req.file) {
-        imagePath = `/uploads/${req.file.filename}`;
+        // saved locally without cloud storage
+        // imagePath = `/uploads/${req.file.filename}`; 
+
+        // upload to cloud storage(try catch finally is due to delete local file either image upload success or error)
+        try {
+            const result = await uploadChatImage(req.file.path); // uploaded image to cloudinary
+            imagePath = result.secure_url; // get uploaded image url
+        } catch (error) {
+            console.error("Error uploading file to Cloudinary:", error);
+        } finally {
+            await fs.unlink(req.file.path).catch(err => console.error("Error deleting local file:", err)); // delete local file
+        }
     }
 
     if (!content && !imagePath) {

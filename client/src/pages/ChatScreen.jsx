@@ -221,7 +221,11 @@ const ChatScreen = () => {
                       >
                         {msg.image && (
                           <img 
-                            src={`${import.meta.env.VITE_API_BASE_URL + msg.image}`} 
+                            src={`${
+                              msg.image?.includes("uploads") 
+                                ? import.meta.env.VITE_API_BASE_URL + msg.image // server saved images in uploads folder 
+                                : msg.image //  cloud storage uploaded images URLS  
+                            }`}
                             alt="attachment" 
                             style={{ 
                               maxWidth: "100%", 
