@@ -13,6 +13,13 @@ const messageSchema = new Schema({
         type: String,
         default: ""
     },
+    images: [{
+        type: String
+    }],
+    video: {
+        type: String,
+        default: ""
+    },
     chatId: {
         type: Schema.Types.ObjectId,
         ref: 'Chat'

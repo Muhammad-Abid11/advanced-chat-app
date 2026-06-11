@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.route("/").get(verifyToken, getAllChatsLastMessage).post(verifyToken, createChat);
 
-router.route("/messages").post(verifyToken, upload.single("image"), sendMessage);
+router.route("/messages").post(verifyToken, upload.array("attachments", 10), sendMessage);
 router.route("/messages/:chatId").get(verifyToken, allMessages);
 
 // dynamic param route must be last, if you placed "/:chatId" before "/messages"(get service), express treats as: req.params.chatId = "messages"

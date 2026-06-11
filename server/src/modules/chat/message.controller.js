@@ -8,9 +8,10 @@ import { uploadChatImage } from "../../services/upload.cloudinary.js";
 // Send a new message
 export const sendMessage = async (req, res) => {
     const { content, chatId } = req.body;
-    let imagePath = "";
+    let images = [];
+    let videoPath = "";
 
-    if (req.file) {
+    if (req.files && req.files.length > 0) {
         // saved locally without cloud storage
         // imagePath = `/uploads/${req.file.filename}`; 
 
@@ -27,13 +28,32 @@ export const sendMessage = async (req, res) => {
         */
 
         // 2. Multer.MemoryStorage (buffer), no need for try catch finally as no local file is saved here
+        
+        /* // For single image/video upload using uploadChatImage function, use this one
         const result = await uploadChatImage(req.file.buffer); // uploaded image to cloudinary
-        imagePath = result.secure_url; // get uploaded image url
+        
+        if (req.file.mimetype.startsWith("video/")) {
+            videoPath = result.secure_url;
+        } else {
+            imagePath = result.secure_url;
+        }
+        */
 
+        // Upload all files concurrently
+        const uploadPromises = req.files.map(async (file) => {
+            const result = await uploadChatImage(file.buffer);
+            if (file.mimetype.startsWith("video/")) {
+                videoPath = result.secure_url;
+            } else {
+                images.push(result.secure_url);
+            }
+        });
+
+        await Promise.all(uploadPromises);
     }
 
-    if (!content && !imagePath) {
-        return res.status(400).json({ message: "Message content or image is required" });
+    if (!content && images.length === 0 && !videoPath) {
+        return res.status(400).json({ message: "Message content, image, or video is required" });
     }
 
     if (!chatId) {
@@ -43,7 +63,9 @@ export const sendMessage = async (req, res) => {
     const newMessage = {
         senderId: req.user.user_id,
         content: content || "",
-        image: imagePath,
+        image: images.length > 0 ? images[0] : "", // Keep first image for backward compatibility
+        images: images,
+        video: videoPath,
         chatId: chatId,
     };
 

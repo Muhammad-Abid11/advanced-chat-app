@@ -30,18 +30,21 @@ const storage = multer.memoryStorage();
 // now instead of req.file.path we can use file's buffer in bytes => (req.file.buffer)
 
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
+    const allowedTypes = [
+        "image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp",
+        "video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/x-matroska"
+    ];
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error("Only images are allowed"), false);
+        cb(new Error("Only images and videos are allowed"), false);
     }
 };
 
 const upload = multer({
     storage, // tells multer to use the disk storage configuration defined above for file storage.
     fileFilter, // tells multer to use the file filter defined above for file filtering.
-    limits: { fileSize: 5 * 1024 * 1024 } // sets limits on the size of the uploaded file, rejecting any file larger than 5MB
+    limits: { fileSize: 20 * 1024 * 1024 } // sets limits on the size of the uploaded file, rejecting any file larger than 20MB
 });
 
 /* 

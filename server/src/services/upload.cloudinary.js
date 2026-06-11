@@ -15,7 +15,8 @@ export const uploadChatImage = (buffer) => {
 
         const stream = cloudinary.uploader.upload_stream(
             {
-                folder: "chat-images"
+                folder: "chat-images",
+                resource_type: "auto"
             },
             (error, result) => {
                 if (error) {
